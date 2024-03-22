@@ -83,21 +83,21 @@ export class RestAPIStack extends cdk.Stack {
       }
     );
 
-    const getMovieCastMembersFn = new lambdanode.NodejsFunction(
-      this,
-      "GetCastMemberFn",
-      {
-        architecture: lambda.Architecture.ARM_64,
-        runtime: lambda.Runtime.NODEJS_16_X,
-        entry: `${__dirname}/../lambdas/getMovieCastMember.ts`,
-        timeout: cdk.Duration.seconds(10),
-        memorySize: 128,
-        environment: {
-          TABLE_NAME: movieCastsTable.tableName,
-          REGION: "eu-west-1",
-        },
-      }
-    );
+    // const getMovieCastMembersFn = new lambdanode.NodejsFunction(
+    //   this,
+    //   "GetCastMemberFn",
+    //   {
+    //     architecture: lambda.Architecture.ARM_64,
+    //     runtime: lambda.Runtime.NODEJS_16_X,
+    //     entry: `${__dirname}/../lambdas/getMovieCastMember.ts`,
+    //     timeout: cdk.Duration.seconds(10),
+    //     memorySize: 128,
+    //     environment: {
+    //       TABLE_NAME: movieCastsTable.tableName,
+    //       REGION: "eu-west-1",
+    //     },
+    //   }
+    // );
 
     const deleteMovieByIdFn = new lambdanode.NodejsFunction(
       this,
@@ -110,6 +110,22 @@ export class RestAPIStack extends cdk.Stack {
         memorySize: 128,
         environment: {
           TABLE_NAME: moviesTable.tableName,
+          REGION: "eu-west-1",
+        },
+      }
+    );
+
+    const getMovieAwardByIdFn = new lambdanode.NodejsFunction(
+      this,
+      "GetMovieAwardByIdFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_16_X,
+        entry: `${__dirname}/../lambdas/getMovieAwardById.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: movieAwardsTable.tableName,
           REGION: "eu-west-1",
         },
       }
@@ -157,10 +173,10 @@ export class RestAPIStack extends cdk.Stack {
     );
 
     const movieCastEndpoint = moviesEndpoint.addResource("cast");
-    movieCastEndpoint.addMethod(
-      "GET",
-      new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
-    );
+    // movieCastEndpoint.addMethod(
+    //   "GET",
+    //   new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
+    // );
 
     const movieEndpoint = moviesEndpoint.addResource("{movieId}");
     movieEndpoint.addMethod(
@@ -172,13 +188,19 @@ export class RestAPIStack extends cdk.Stack {
       "DELETE",
       new apig.LambdaIntegration(deleteMovieByIdFn, { proxy: true })
     );
+
+    const awardsEndpoint = api.root.addResource("awards").addResource("{awardBody}").addResource("movies").addResource("{movieId}");
+    awardsEndpoint.addMethod(
+      "GET",
+      new apig.LambdaIntegration(getMovieAwardByIdFn, { proxy: true })
+    );
     
     // Permissions;
     moviesTable.grantReadData(getMovieByIdFn);
     moviesTable.grantReadData(getAllMoviesFn);
      moviesTable.grantReadWriteData(deleteMovieByIdFn)
-    movieCastsTable.grantReadData(getMovieCastMembersFn);
+    // movieCastsTable.grantReadData(getMovieCastMembersFn);
     movieCastsTable.grantReadData(getMovieByIdFn)
-
+    movieCastsTable.grantReadData(getMovieAwardByIdFn)
   }
 }
